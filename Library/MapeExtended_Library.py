@@ -129,7 +129,7 @@ class SVR_mapext:
             return 0.5* x.T @ K @ x - y.T @ x + lamda*((1-Ev) @ np.abs(x) + Ev/2 @ x)
 
         def obj_grad(x):
-            return x.T @ K + lamda*((1 - Ev) @ (x/np.abs(x)) + Ev/2) - y
+            return x.T @ K + lamda*((1 - Ev) @ (x/np.abs(x)) + Ev @ x) - y
         
         def F(x = None, z = None):
             if x is None: return 0, matrix(x0)
@@ -164,7 +164,8 @@ class SVR_mapext:
         return self
         
     def predict(self, X_):
-        """Predicts new labels for a given set of new 
+        """
+        Predicts new labels for a given set of new 
            independent variables (X_test).
            
            --Parameters--
@@ -188,5 +189,6 @@ class SVR_mapext:
         """--Returns--
                 - dual support vectors
                 - primal support vectors
-                - intercept"""
+                - intercept
+        """
         return self.beta_sv, self.x_sv, self.b
