@@ -1,5 +1,7 @@
-Bay_opt_analysis contains the code to analyse all proven hyperparameter sets
+- Bay_opt_analysis: Visualization of Bayesian Hyperparameter Optimization.
 
-Bayesian_optimization contains the code use to optimize hyperparameter
+- Bayesian_optimization: Hyperparameter Optimizer.
 
-Mape_extendido_test is useful for single point prove or show plots
+- SVR_MapeExtendido_Example: An example to test the library
+
+- Gplearn_Transform: Feature engineering thorugh Symbolic Transformation
