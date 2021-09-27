@@ -8,4 +8,4 @@
 
 -	SVR_MapeExtendido_Example: An example to test the library using resulting optimum hyperparameters
 
--	newBoston\newDiabetes.csv: Boston Housing dataset with new non-linear features resulting from Symbolic Transformation
+-	newBoston\newDiabetes.csv: Boston Housing\Diabetes dataset with new non-linear features resulting from Symbolic Transformation
