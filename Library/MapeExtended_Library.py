@@ -38,7 +38,7 @@ class SVR_mapext:
             For more information about each method, visit specific documentations.
             
         --Example-- 
-            ## Load the library
+            ## Call the library
             >>> from MapeExtended_Library import SVR_mapext
             ...
             ## Initialize the SVR object with custom parameters
@@ -58,13 +58,10 @@ class SVR_mapext:
     
     def __init__(self, C = 0.1, epsilon = 0.1, lamda = 0.2, kernel = "linear", **kernel_param):
         import numpy as np
-        from cvxopt import matrix, solvers, sparse
+        import cvxpy as cp
         from sklearn.metrics.pairwise import pairwise_kernels
         from sklearn.utils import check_X_y, check_array 
-        self.np = np
-        self.sparse = sparse
-        self.matrix = matrix
-        self.solvers = solvers
+        self.cp = cp
         self.C = C
         self.epsilon = epsilon
         self.kernel = kernel
@@ -98,58 +95,35 @@ class SVR_mapext:
         
         kernel = self.kernel
         pairwise_kernels = self.pairwise_kernels
-        
-        np = self.np
-        sparse = self.sparse 
-        matrix = self.matrix 
-        solvers = self.solvers 
-        
+        cp = self.cp
         # Useful parameters
         ydim = y.shape[0]
         onev = np.ones((ydim,1))
-        x0 = np.random.rand(ydim)
         
-        # Prematrices for the optimizer
+        # Matrices and constraints for the optimizer
         K = pairwise_kernels(X, X, metric = kernel, **self.kernel_param)
         A = onev.T
         b = 0.0
         G = np.concatenate((np.identity(ydim), -np.identity(ydim)))
         h_ = np.concatenate((100*C*np.ones(ydim)/y, 100*C*np.ones(ydim)/y)); 
         h = h_.reshape(-1, 1)
-
-        # Matrices for the optimizer
-        A = matrix(A)
-        b = matrix(b)
-        G = sparse(matrix(G))
-        h = matrix(h)
+        
+        beta = cp.Variable((ydim, 1))
         Ev = (epsilon*y.T)/100
         
-        # functions for the optimizer
-        def obj_func(x):
-            return 0.5* x.T @ K @ x - y.T @ x + lamda*((1-Ev) @ np.abs(x) + Ev/2 @ x)
+        # loss function and constraints
+        min_fun = (1/2)*cp.quad_form(beta, K) - y.T @ beta + lamda*((1-Ev) @ cp.abs(beta) + Ev/2 @ beta**2)
+        objective = cp.Minimize(min_fun)
+        constraints = [A @ beta == b, G @ beta <= h]
 
-        def obj_grad(x):
-            return x.T @ K + lamda*((1 - Ev) @ (x/np.abs(x)) + Ev @ x) - y
         
-        def F(x = None, z = None):
-            if x is None: return 0, matrix(x0)
-            # objective dunction
-            val = matrix(obj_func(x))
-            # obj. func. gradient
-            Df = matrix(obj_grad(x))
-            if z is None: return val, Df
-            # hessian
-            H = matrix(z[0] * K)
-            return val, Df, H
-        
-        # Solver
-        solvers.options['show_progress'] = False
-        sol = solvers.cp(F=F, G=G, h=h, A=A, b=b)
+        # Solver and solution
+        prob = cp.Problem(objective,constraints)
+        result = prob.solve()
         
         # Support vectors
-        beta_1 = np.array(sol['x']).reshape(-1)
-        beta_n = np.abs(beta_1)/beta_1.max()
-        indx = beta_n > 5e-3
+        beta_1 = np.array(beta.value).reshape(-1)
+        indx = abs(beta_1) > 5e-3
         beta_sv = beta_1[indx]
         x_sv = X[indx,:]
         y_sv = y[indx]
@@ -164,8 +138,7 @@ class SVR_mapext:
         return self
         
     def predict(self, X_):
-        """
-        Predicts new labels for a given set of new 
+        """Predicts new labels for a given set of new 
            independent variables (X_test).
            
            --Parameters--
@@ -189,6 +162,5 @@ class SVR_mapext:
         """--Returns--
                 - dual support vectors
                 - primal support vectors
-                - intercept
-        """
+                - intercept"""
         return self.beta_sv, self.x_sv, self.b
