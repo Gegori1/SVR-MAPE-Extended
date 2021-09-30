@@ -112,7 +112,7 @@ class SVR_mapext:
         Ev = (epsilon*y.T)/100
         
         # loss function and constraints
-        min_fun = (1/2)*cp.quad_form(beta, K) - y.T @ beta + lamda*((1-Ev) @ cp.abs(beta) + Ev/2 @ beta**2)
+        min_fun = (1/2)*cp.quad_form(beta, K) - y.T @ beta + lamda*((1*y.T-Ev) @ cp.abs(beta) + Ev/2 @ beta**2)
         objective = cp.Minimize(min_fun)
         constraints = [A @ beta == b, G @ beta <= h]
 
